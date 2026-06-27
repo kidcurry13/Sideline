@@ -1,4 +1,787 @@
-<!DOCTYPE html>
+<!DOCTYPE html><!DOCTYPE html>
+<html lang="en" data-sport="nfl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SIDELINE — Live Multi-Sport Platform</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0A0F1A; --surface:#121A28; --surface-2:#1A2435; --line:#283449;
+    --text:#EAF0F8; --muted:#8493A8; --led:#FFC857; --live:#FF4D4D; --td:#3DDC84;
+    --accent:#FF6B35; --accent-soft:rgba(255,107,53,.14); --radius:14px; --maxw:1180px;
+  }
+  html[data-sport="nfl"]{ --accent:#FF6B35; --accent-soft:rgba(255,107,53,.14); }
+  html[data-sport="mlb"]{ --accent:#37A0FF; --accent-soft:rgba(55,160,255,.14); }
+  *{box-sizing:border-box;} html,body{margin:0;padding:0;}
+  body{background:radial-gradient(1200px 600px at 80% -10%, rgba(55,160,255,.06), transparent 60%),radial-gradient(900px 500px at -10% 110%, rgba(255,107,53,.06), transparent 55%), var(--bg);
+    color:var(--text); font-family:'Inter',system-ui,sans-serif; min-height:100vh; -webkit-font-smoothing:antialiased;}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 20px;}
+  .topbar{position:sticky;top:0;z-index:30;backdrop-filter:blur(10px);background:rgba(10,15,26,.82);border-bottom:1px solid var(--line);}
+  .topbar-inner{display:flex;align-items:center;gap:18px;height:64px;}
+  .brand{display:flex;align-items:center;gap:10px;font-family:'Oswald';font-weight:700;font-size:22px;letter-spacing:.14em;text-transform:uppercase;}
+  .brand .mark{width:12px;height:22px;border-radius:3px;background:linear-gradient(180deg,var(--accent),transparent);box-shadow:0 0 14px var(--accent);}
+  .brand .hi{color:var(--accent);}
+  .sport-tabs{display:flex;gap:4px;margin-left:8px;background:var(--surface);padding:4px;border-radius:11px;border:1px solid var(--line);}
+  .sport-tab{appearance:none;border:0;background:transparent;color:var(--muted);font-family:'Oswald';font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:13px;padding:8px 16px;border-radius:8px;cursor:pointer;transition:.18s;}
+  .sport-tab:hover{color:var(--text);}
+  .sport-tab[aria-selected="true"]{background:var(--accent-soft);color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent);}
+  .sport-tab.locked{opacity:.4;cursor:not-allowed;}
+
+  .subtabs{display:flex;gap:4px;margin:16px 0 2px;background:var(--surface);padding:4px;border:1px solid var(--line);border-radius:12px;width:fit-content;max-width:100%;flex-wrap:wrap;}
+  .subtab{appearance:none;border:0;background:transparent;color:var(--muted);font-family:'Oswald';font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:12.5px;padding:8px 18px;border-radius:8px;cursor:pointer;transition:.15s;}
+  .subtab:hover{color:var(--text);}
+  .subtab.on{background:var(--accent-soft);color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent);}
+  .subview.hidden{display:none;}
+  .teambar{height:3px;border-radius:2px;margin-top:4px;}
+  .clock{margin-left:auto;display:flex;align-items:center;gap:9px;font-family:'JetBrains Mono';font-size:13px;color:var(--muted);}
+  .live-dot{width:8px;height:8px;border-radius:50%;background:var(--live);box-shadow:0 0 10px var(--live);animation:pulse 1.4s infinite;}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
+
+  .src{display:inline-flex;align-items:center;gap:7px;font-family:'Oswald';letter-spacing:.1em;text-transform:uppercase;font-size:11px;padding:4px 10px;border-radius:20px;border:1px solid var(--line);color:var(--muted);}
+  .src .d{width:7px;height:7px;border-radius:50%;background:var(--muted);}
+  .src.on{color:var(--td);border-color:rgba(61,220,132,.4);} .src.on .d{background:var(--td);box-shadow:0 0 8px var(--td);}
+  .src.demo{color:var(--led);border-color:rgba(255,200,87,.4);} .src.demo .d{background:var(--led);box-shadow:0 0 8px var(--led);}
+  .src.off{color:var(--live);border-color:rgba(255,77,77,.4);} .src.off .d{background:var(--live);}
+
+  .topnote{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:18px 0 6px;padding:11px 14px;border-radius:11px;background:var(--surface);border:1px solid var(--line);font-size:13px;color:var(--muted);}
+  .topnote b{color:var(--text);font-weight:600;}
+
+  /* nav bar */
+  .navbar{display:flex;align-items:center;gap:10px;margin:18px 0 4px;flex-wrap:wrap;}
+  .navbtn{appearance:none;background:var(--surface);border:1px solid var(--line);color:var(--text);font-family:'Oswald';letter-spacing:.06em;text-transform:uppercase;font-size:12px;padding:9px 14px;border-radius:10px;cursor:pointer;transition:.15s;}
+  .navbtn:hover{border-color:var(--accent);color:var(--accent);}
+  .navbtn.ghost{background:transparent;color:var(--muted);}
+  .navlabel{font-family:'Oswald';font-weight:600;font-size:17px;letter-spacing:.04em;min-width:150px;text-align:center;}
+  .navlabel small{display:block;font-size:11px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;font-weight:500;}
+  .navbar select,.navbar input[type=date]{background:var(--surface);border:1px solid var(--line);color:var(--text);font-family:'Inter';font-size:13px;padding:8px 10px;border-radius:10px;cursor:pointer;}
+  .navbar .spacer{flex:1;}
+
+  .eyebrow{font-family:'Oswald';font-weight:600;letter-spacing:.18em;text-transform:uppercase;font-size:12px;color:var(--muted);margin:24px 0 12px;display:flex;align-items:center;gap:12px;}
+  .eyebrow .line{flex:1;height:1px;background:var(--line);}
+
+  .strip{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;}
+  .game{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px;cursor:pointer;transition:.18s;}
+  .game:hover{border-color:var(--accent);transform:translateY(-2px);}
+  .game.sel{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent),0 10px 30px rgba(0,0,0,.4);}
+  .game .state{font-family:'Oswald';font-size:11px;letter-spacing:.08em;text-transform:uppercase;display:flex;align-items:center;gap:6px;color:var(--muted);margin-bottom:10px;}
+  .game .state.islive{color:var(--live);}
+  .team-row{display:flex;align-items:center;justify-content:space-between;padding:3px 0;}
+  .team-row .tn{display:flex;align-items:center;gap:9px;font-weight:600;font-size:15px;}
+  .tlogo{width:24px;height:24px;object-fit:contain;border-radius:5px;background:#ffffff10;}
+  .logo{width:26px;height:26px;border-radius:7px;display:grid;place-items:center;font-family:'Oswald';font-weight:700;font-size:11px;color:#0A0F1A;background:#46566e;}
+  .team-row .sc{font-family:'Oswald';font-weight:700;font-size:22px;font-variant-numeric:tabular-nums;}
+  .team-row.lose .sc, .team-row.lose .tn{color:var(--muted);}
+
+  .grid{display:grid;grid-template-columns:1.55fr 1fr;gap:16px;margin-top:14px;}
+  .panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px;}
+  .panel h3{font-family:'Oswald';font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:13px;color:var(--muted);margin:0 0 14px;display:flex;align-items:center;gap:10px;}
+  .panel h3 .src{margin-left:auto;}
+
+  .board{background:#070B14;border:1px solid var(--line);border-radius:12px;padding:18px 20px;display:flex;align-items:center;justify-content:space-between;gap:14px;}
+  .board .side{display:flex;align-items:center;gap:14px;flex:1;}
+  .board .side.right{flex-direction:row-reverse;text-align:right;}
+  .board .biglogo{width:46px;height:46px;border-radius:10px;display:grid;place-items:center;font-family:'Oswald';font-weight:700;font-size:15px;color:#0A0F1A;background:#46566e;}
+  .board .biglogo img{width:42px;height:42px;object-fit:contain;}
+  .board .nm{font-family:'Oswald';font-weight:600;font-size:15px;letter-spacing:.04em;line-height:1.1;}
+  .board .rec{font-size:11px;color:var(--muted);font-family:'JetBrains Mono';}
+  .led{font-family:'Oswald';font-weight:700;font-size:54px;line-height:1;color:var(--led);font-variant-numeric:tabular-nums;text-shadow:0 0 16px rgba(255,200,87,.5),0 0 2px rgba(255,200,87,.9);}
+  .board .mid{text-align:center;min-width:86px;}
+  .board .mid .q{font-family:'Oswald';font-size:12px;letter-spacing:.06em;color:var(--accent);text-transform:uppercase;line-height:1.25;}
+
+  /* drive tracker / field */
+  .drive{margin-top:14px;}
+  .drivetop{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted);margin-bottom:10px;flex-wrap:wrap;}
+  .drivetop b{color:var(--text);}
+  .drivetop .dd{margin-left:auto;font-family:'Oswald';letter-spacing:.06em;text-transform:uppercase;color:var(--accent);font-size:13px;}
+  .field{position:relative;height:46px;border-radius:8px;overflow:hidden;border:1px solid var(--line);
+    background:repeating-linear-gradient(90deg,#0e1a12,#0e1a12 9.9%,#16271b 10%,#16271b 10%);}
+  .field .ez{position:absolute;top:0;bottom:0;width:9%;background:var(--surface-2);display:grid;place-items:center;font-family:'Oswald';font-size:9px;color:var(--muted);letter-spacing:.05em;writing-mode:vertical-rl;text-transform:uppercase;}
+  .field .ez.l{left:0;} .field .ez.r{right:0;}
+  .field .ball{position:absolute;top:50%;width:14px;height:14px;border-radius:50%;background:var(--accent);box-shadow:0 0 12px var(--accent);transform:translate(-50%,-50%);transition:left .5s ease;}
+  .field .first{position:absolute;top:0;bottom:0;width:2px;background:var(--led);box-shadow:0 0 8px var(--led);}
+  .drivenote{font-size:12px;color:var(--muted);margin-top:8px;}
+
+  /* box score comparison */
+  .statcmp{display:flex;flex-direction:column;}
+  .statrow{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--line);}
+  .statrow:last-child{border-bottom:0;}
+  .statrow .v{font-family:'JetBrains Mono';font-weight:700;font-size:14px;font-variant-numeric:tabular-nums;}
+  .statrow .v.a{text-align:left;} .statrow .v.h{text-align:right;}
+  .statrow .lab{font-family:'Oswald';font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);text-align:center;white-space:nowrap;}
+  .statrow .v.win{color:var(--td);}
+  .glead{display:flex;flex-direction:column;gap:0;margin-top:6px;}
+  .gl{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);font-size:13px;}
+  .gl:last-child{border-bottom:0;}
+  .gl .cat{font-family:'Oswald';font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);width:60px;}
+  .gl .nm{flex:1;font-weight:500;}
+  .gl .val{font-family:'JetBrains Mono';font-size:12px;color:var(--muted);}
+
+  .feed{display:flex;flex-direction:column;max-height:300px;overflow:auto;}
+  .play{display:flex;gap:12px;padding:11px 2px;border-bottom:1px solid var(--line);align-items:flex-start;}
+  .play:last-child{border-bottom:0;}
+  .play .t{font-family:'JetBrains Mono';font-size:12px;color:var(--muted);min-width:66px;padding-top:1px;}
+  .play .badge{font-family:'Oswald';font-size:10px;letter-spacing:.08em;text-transform:uppercase;padding:2px 7px;border-radius:5px;background:var(--surface-2);color:var(--muted);white-space:nowrap;}
+  .play .badge.td{background:rgba(61,220,132,.16);color:var(--td);}
+  .play .badge.fg{background:rgba(255,200,87,.16);color:var(--led);}
+  .play .desc{font-size:13.5px;line-height:1.4;} .play .desc .tm{color:var(--accent);font-weight:600;}
+
+  .fanbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px;}
+  .posfilter{display:flex;gap:4px;background:var(--surface-2);padding:4px;border-radius:10px;}
+  .pf{appearance:none;border:0;background:transparent;color:var(--muted);font-family:'Oswald';letter-spacing:.06em;text-transform:uppercase;font-size:12px;padding:6px 13px;border-radius:7px;cursor:pointer;}
+  .pf.on{background:var(--accent-soft);color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent);}
+  .scoring{margin-left:auto;font-size:11px;color:var(--muted);font-family:'Oswald';letter-spacing:.06em;text-transform:uppercase;}
+  .fanlist{display:flex;flex-direction:column;}
+  .fr{display:flex;align-items:center;gap:12px;padding:10px 2px;border-bottom:1px solid var(--line);cursor:pointer;flex-wrap:wrap;}
+  .fr:last-child{border-bottom:0;}
+  .fr .rk{font-family:'Oswald';font-weight:700;font-size:14px;color:var(--muted);width:26px;text-align:center;}
+  .fr .who{flex:1;font-size:14px;font-weight:600;min-width:120px;} .fr .who small{display:block;font-weight:400;color:var(--muted);font-size:11.5px;}
+  .fr .pos{font-family:'Oswald';font-size:10px;letter-spacing:.06em;color:var(--muted);border:1px solid var(--line);padding:2px 7px;border-radius:5px;}
+  .fr .pts{font-family:'Oswald';font-weight:700;font-size:18px;color:var(--td);font-variant-numeric:tabular-nums;min-width:52px;text-align:right;}
+  .fr .brk{flex-basis:100%;font-size:12px;color:var(--muted);font-family:'JetBrains Mono';padding:2px 0 2px 38px;display:none;}
+  .fr.open .brk{display:block;}
+  .fannote{font-size:12px;color:var(--muted);margin-top:14px;padding-top:12px;border-top:1px solid var(--line);line-height:1.5;}
+
+  /* standings */
+  .standwrap{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  .conf h4{font-family:'Oswald';letter-spacing:.12em;text-transform:uppercase;font-size:13px;color:var(--accent);margin:6px 0 10px;}
+  .divtable{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:12px;}
+  .divtable .dn{font-family:'Oswald';font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
+  .strow{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;padding:5px 0;font-size:13.5px;border-top:1px solid var(--line);}
+  .strow:first-of-type{border-top:0;}
+  .strow .tn{display:flex;align-items:center;gap:8px;font-weight:500;}
+  .strow .rec{font-family:'JetBrains Mono';font-size:12.5px;} .strow .pct{font-family:'JetBrains Mono';font-size:12px;color:var(--muted);width:42px;text-align:right;}
+
+  /* MLB pitch */
+  .atbat{display:flex;align-items:center;gap:20px;flex-wrap:wrap;margin-bottom:8px;}
+  .matchup{font-size:13px;color:var(--muted);} .matchup b{color:var(--text);font-size:15px;display:block;font-family:'Oswald';letter-spacing:.03em;}
+  .count{display:flex;gap:18px;} .count .grp{text-align:center;}
+  .count .grp .lab{font-family:'Oswald';font-size:10px;letter-spacing:.12em;color:var(--muted);text-transform:uppercase;}
+  .count .grp .lights{display:flex;gap:5px;margin-top:5px;justify-content:center;}
+  .count .grp .lights i{width:13px;height:13px;border-radius:50%;background:var(--surface-2);border:1px solid var(--line);display:inline-block;}
+  .count .grp.balls .lights i.on{background:var(--td);box-shadow:0 0 8px var(--td);border-color:var(--td);}
+  .count .grp.strikes .lights i.on{background:var(--led);box-shadow:0 0 8px var(--led);border-color:var(--led);}
+  .count .grp.outs .lights i.on{background:var(--live);box-shadow:0 0 8px var(--live);border-color:var(--live);}
+  .diamond{width:88px;height:88px;position:relative;transform:rotate(45deg);margin:4px auto;}
+  .base{position:absolute;width:23px;height:23px;background:var(--surface-2);border:1px solid var(--line);border-radius:4px;}
+  .base.on{background:var(--accent);box-shadow:0 0 12px var(--accent);border-color:var(--accent);}
+  .base.b1{right:0;top:32px;} .base.b2{left:32px;top:0;} .base.b3{left:0;top:32px;} .base.home{left:32px;bottom:0;}
+  .zonewrap{display:flex;flex-direction:column;align-items:center;}
+  .zone-svg{width:100%;max-width:300px;height:auto;}
+  .lastpitch{margin-top:10px;text-align:center;}
+  .lastpitch .v{font-family:'Oswald';font-weight:700;font-size:36px;color:var(--led);font-variant-numeric:tabular-nums;text-shadow:0 0 14px rgba(255,200,87,.4);} .lastpitch .v small{font-size:15px;color:var(--muted);}
+  .lastpitch .ty{font-family:'Oswald';letter-spacing:.1em;text-transform:uppercase;font-size:13px;}
+  .legend{display:flex;flex-wrap:wrap;gap:8px 14px;margin-top:14px;justify-content:center;}
+  .legend span{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--muted);} .legend span i{width:9px;height:9px;border-radius:50%;}
+  .pitchlist{display:flex;flex-direction:column;max-height:280px;overflow:auto;margin-top:4px;}
+  .pl{display:flex;align-items:center;gap:11px;padding:9px 2px;border-bottom:1px solid var(--line);} .pl:last-child{border-bottom:0;}
+  .pl .no{font-family:'JetBrains Mono';font-size:11px;color:var(--muted);width:18px;}
+  .pl .ptype{flex:1;font-size:13.5px;font-weight:500;display:flex;align-items:center;gap:8px;} .pl .ptype i{width:8px;height:8px;border-radius:50%;flex:none;}
+  .pl .velo{font-family:'JetBrains Mono';font-weight:700;font-size:13px;}
+  .pl .res{font-family:'Oswald';font-size:10px;letter-spacing:.06em;text-transform:uppercase;padding:2px 8px;border-radius:5px;background:var(--surface-2);color:var(--muted);min-width:54px;text-align:center;}
+  .pl .res.strike{background:rgba(255,200,87,.16);color:var(--led);} .pl .res.ball{background:rgba(61,220,132,.16);color:var(--td);} .pl .res.hit{background:var(--accent-soft);color:var(--accent);}
+
+  .empty{padding:26px 18px;text-align:center;color:var(--muted);font-size:14px;line-height:1.6;background:var(--surface);border:1px dashed var(--line);border-radius:var(--radius);} .empty b{color:var(--text);}
+
+  .foot{margin:36px 0 50px;padding:20px;border:1px dashed var(--line);border-radius:var(--radius);color:var(--muted);font-size:13px;line-height:1.65;} .foot b{color:var(--text);}
+  .foot code{font-family:'JetBrains Mono';background:var(--surface-2);padding:2px 6px;border-radius:5px;color:var(--accent);font-size:12px;}
+  .hidden{display:none !important;}
+  @media (max-width:860px){ .grid{grid-template-columns:1fr;} .standwrap{grid-template-columns:1fr;} .clock .lbl{display:none;} .led{font-size:42px;} .brand{font-size:18px;} }
+  @media (prefers-reduced-motion:reduce){ *{animation:none !important;transition:none !important;} }
+  :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px;}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap topbar-inner">
+    <div class="brand"><span class="mark"></span><span>SIDE</span><span class="hi">LINE</span></div>
+    <div class="sport-tabs" role="tablist" aria-label="Sport">
+      <button class="sport-tab" role="tab" aria-selected="true" data-sport="nfl">NFL</button>
+      <button class="sport-tab" role="tab" aria-selected="false" data-sport="mlb">MLB</button>
+      <button class="sport-tab locked" role="tab" aria-disabled="true" title="Add more sports later">NBA +</button>
+    </div>
+    <div class="clock"><span class="live-dot"></span><span class="lbl">LIVE</span> · <span id="clock">--:--:--</span></div>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="topnote">
+    <span class="src" id="global-src"><span class="d"></span><span id="global-src-t">Connecting…</span></span>
+    <span id="topnote-text">Pulling live data from ESPN. No key needed.</span>
+  </div>
+
+  <!-- ============ NFL ============ -->
+  <section id="view-nfl">
+    <div class="subtabs" id="nfl-subtabs" role="tablist" aria-label="NFL section">
+      <button class="subtab on" role="tab" data-sub="games">Games</button>
+      <button class="subtab" role="tab" data-sub="fantasy">Fantasy</button>
+      <button class="subtab" role="tab" data-sub="standings">Standings</button>
+    </div>
+
+    <div class="navbar" id="nfl-navbar">
+      <button class="navbtn" id="nfl-prev">‹ Prev</button>
+      <div class="navlabel" id="nfl-weeklabel">Week —<small id="nfl-seasonlabel">2025 Season</small></div>
+      <button class="navbtn" id="nfl-next">Next ›</button>
+      <select id="nfl-weeksel" aria-label="Jump to week"></select>
+      <select id="nfl-yearsel" aria-label="Season year">
+        <option value="2025">2025</option><option value="2024">2024</option><option value="2023">2023</option>
+      </select>
+      <span class="spacer"></span>
+    </div>
+
+    <!-- GAMES -->
+    <div class="subview" id="nfl-sub-games">
+      <div class="eyebrow">Scoreboard <span class="line"></span></div>
+      <div class="strip" id="nfl-strip"><div class="empty">Loading games…</div></div>
+
+      <div class="grid" id="nfl-grid">
+        <div class="panel">
+          <h3>Game Center <span class="src" id="nfl-src"><span class="d"></span>—</span></h3>
+          <div class="board" id="nfl-board"></div>
+
+          <div class="drive" id="nfl-drive">
+            <div class="drivetop"><span id="nfl-drivetext"></span><span class="dd" id="nfl-dd"></span></div>
+            <div class="field" id="nfl-field">
+              <div class="ez l">Goal</div><div class="ez r">Goal</div>
+              <div class="first" id="nfl-firstline" style="left:50%;display:none;"></div>
+              <div class="ball" id="nfl-ball" style="left:50%;display:none;"></div>
+            </div>
+            <div class="drivenote" id="nfl-drivenote"></div>
+          </div>
+
+          <h3 style="margin-top:22px;">Scoring Plays</h3>
+          <div class="feed" id="nfl-feed"></div>
+        </div>
+
+        <div class="panel">
+          <h3>Team Stats <span class="src" id="nfl-box-src"><span class="d"></span>—</span></h3>
+          <div class="statcmp" id="nfl-stats"></div>
+          <h3 style="margin-top:18px;">Game Leaders</h3>
+          <div class="glead" id="nfl-leaders"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FANTASY -->
+    <div class="subview hidden" id="nfl-sub-fantasy">
+      <div class="eyebrow">Fantasy Leaders <span class="line"></span><span id="fan-weeklabel" style="font-family:'JetBrains Mono';letter-spacing:0;text-transform:none;"></span></div>
+      <div class="panel">
+        <h3>Top Weekly Performers <span class="src" id="fan-src"><span class="d"></span>—</span></h3>
+        <div class="fanbar">
+          <div class="posfilter" id="fan-filter">
+            <button class="pf on" data-pos="ALL">All</button>
+            <button class="pf" data-pos="QB">QB</button>
+            <button class="pf" data-pos="RB">RB</button>
+            <button class="pf" data-pos="WR">WR</button>
+            <button class="pf" data-pos="TE">TE</button>
+          </div>
+          <span class="scoring">PPR · tap a player for the breakdown</span>
+        </div>
+        <div class="fanlist" id="fan-list"><div class="empty" style="border:0;padding:18px;">Loading fantasy leaders…</div></div>
+        <div class="fannote">Real weekly fantasy points, computed from actual box scores for the selected week. Season-long leaders and week-over-week “trending up” are the next add-on.</div>
+      </div>
+    </div>
+
+    <!-- STANDINGS -->
+    <div class="subview hidden" id="nfl-sub-standings">
+      <div class="eyebrow">Standings <span class="line"></span></div>
+      <div class="standwrap" id="nfl-standings"><div class="empty">Loading standings…</div></div>
+    </div>
+  </section>
+
+  <!-- ============ MLB ============ -->
+  <section id="view-mlb" class="hidden">
+    <div class="navbar">
+      <button class="navbtn" id="mlb-prev">‹ Prev</button>
+      <div class="navlabel" id="mlb-datelabel">—<small>Schedule</small></div>
+      <button class="navbtn" id="mlb-next">Next ›</button>
+      <button class="navbtn ghost" id="mlb-today">Today</button>
+      <input type="date" id="mlb-datepick" aria-label="Pick date">
+      <span class="spacer"></span>
+    </div>
+
+    <div class="eyebrow">Scoreboard <span class="line"></span></div>
+    <div class="strip" id="mlb-strip"><div class="empty">Loading games…</div></div>
+
+    <div class="grid" id="mlb-grid">
+      <div class="panel">
+        <h3>At The Plate <span class="src" id="mlb-src"><span class="d"></span>—</span></h3>
+        <div class="board" id="mlb-board"></div>
+        <div class="atbat" style="margin-top:16px;">
+          <div class="matchup" id="mlb-matchup"></div>
+          <div class="count">
+            <div class="grp balls"><div class="lab">Balls</div><div class="lights" id="c-balls"></div></div>
+            <div class="grp strikes"><div class="lab">Strikes</div><div class="lights" id="c-strikes"></div></div>
+            <div class="grp outs"><div class="lab">Outs</div><div class="lights" id="c-outs"></div></div>
+          </div>
+          <div><div class="lab" style="font-family:'Oswald';font-size:10px;letter-spacing:.12em;color:var(--muted);text-transform:uppercase;text-align:center;">Bases</div>
+            <div class="diamond"><div class="base b2" id="bs2"></div><div class="base b1" id="bs1"></div><div class="base b3" id="bs3"></div><div class="base home"></div></div>
+          </div>
+        </div>
+        <h3 style="margin-top:14px;">Pitch By Pitch <span class="src" id="pitch-src"><span class="d"></span>—</span></h3>
+        <div class="pitchlist" id="mlb-pitches"></div>
+      </div>
+      <div class="panel">
+        <h3>Live Pitch Tracker</h3>
+        <div class="zonewrap">
+          <svg class="zone-svg" viewBox="0 0 300 320" id="zone"></svg>
+          <div class="lastpitch"><div class="v" id="lp-velo">--<small> mph</small></div><div class="ty" id="lp-type">Awaiting pitch</div></div>
+          <div class="legend" id="zone-legend"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="foot">
+    <b>Live data:</b> scores, drives, box scores &amp; standings from ESPN's public API; MLB pitch location/velocity from <code>statsapi.mlb.com</code>. NFL defaults to the completed 2025 season since it's the offseason — switch weeks/years with the nav. A yellow light means a feed blocked the browser; hosting the page fixes it. Tell me what's next and I'll keep building.
+  </div>
+</main>
+
+<script>
+/* ============================================================ CONFIG */
+const CFG = {
+  espn:'https://site.api.espn.com/apis/site/v2/sports',
+  espnWeb:'https://site.web.api.espn.com/apis',
+  mlb1:'https://statsapi.mlb.com/api/v1', mlb11:'https://statsapi.mlb.com/api/v1.1',
+  refresh:20000, refreshDetail:12000,
+};
+const PITCH_COLORS={'Four-Seam Fastball':'#FF4D4D','Fastball':'#FF4D4D','Sinker':'#FF8A3C','Two-Seam Fastball':'#FF8A3C','Cutter':'#37D4C0','Slider':'#37A0FF','Sweeper':'#37A0FF','Slurve':'#5C8DFF','Curveball':'#A77BFF','Knuckle Curve':'#A77BFF','Changeup':'#3DDC84','Split-Finger':'#7DDCA0','Splitter':'#7DDCA0'};
+const pitchColor=t=>PITCH_COLORS[t]||'#9AA7BC';
+
+/* NFL week model */
+const NFL_WEEKS=[];
+for(let w=1;w<=4;w++) NFL_WEEKS.push({label:'Preseason '+w,st:1,wk:w});
+for(let w=1;w<=18;w++) NFL_WEEKS.push({label:'Week '+w,st:2,wk:w});
+NFL_WEEKS.push({label:'Wild Card',st:3,wk:1},{label:'Divisional',st:3,wk:2},{label:'Conf. Championship',st:3,wk:3},{label:'Super Bowl',st:3,wk:5});
+const DEFAULT_WEEK_IDX = NFL_WEEKS.findIndex(w=>w.st===2&&w.wk===18);
+
+
+/* ============================================================ STATE */
+const ST={
+  nfl:{year:2025,weekIdx:DEFAULT_WEEK_IDX,games:[],sel:null,src:'…',standYear:null,fan:{key:null,rows:[],pos:'ALL'}},
+  mlb:{date:new Date(),games:[],sel:null,src:'…',sched:null,pitches:[]},
+};
+const $=s=>document.querySelector(s);
+const html=document.documentElement;
+async function getJSON(u){ try{const r=await fetch(u,{cache:'no-store'});if(!r.ok)throw 0;return await r.json();}catch(e){return null;} }
+function nick(n){return (n||'').split(' ').pop().toLowerCase();}
+function setSrc(el,kind,label){ if(!el)return; el.className='src '+(kind==='on'?'on':kind==='demo'?'demo':'off'); el.innerHTML='<span class="d"></span>'+label; }
+function ymd(d){return d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0');}
+function ymdDash(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+
+/* ============================================================ ESPN PARSE */
+function parseEspn(json){
+  if(!json||!json.events) return [];
+  return json.events.map(ev=>{
+    const comp=ev.competitions[0], c=comp.competitors||[];
+    const home=c.find(x=>x.homeAway==='home')||c[0], away=c.find(x=>x.homeAway==='away')||c[1];
+    const st=ev.status||comp.status;
+    const hexp=v=>v?('#'+String(v).replace('#','')):'';
+    const team=t=>({id:t.team.id,ab:t.team.abbreviation||'',name:t.team.shortDisplayName||t.team.name||'',
+      score:t.score!=null?Number(t.score):0,rec:(t.records&&t.records[0]&&t.records[0].summary)||'',logo:t.team.logo||'',
+      color:hexp(t.team.color),alt:hexp(t.team.alternateColor)});
+    return {id:ev.id,live:st.type.state==='in',final:st.type.state==='post',
+      statusText:st.type.shortDetail||st.type.description,clock:st.displayClock,
+      away:team(away),home:team(home),situation:comp.situation||null};
+  });
+}
+function teamLogo(t,cls){ return t.logo?`<img class="${cls}" src="${t.logo}" alt="${t.ab}" onerror="this.outerHTML='<span class=&quot;logo&quot;>${t.ab}</span>'">`:`<span class="logo">${t.ab}</span>`; }
+function bigLogo(t){ return t.logo?`<span class="biglogo"><img src="${t.logo}" alt="${t.ab}"></span>`:`<span class="biglogo">${t.ab}</span>`; }
+/* ---- team colour theming ---- */
+function hex2rgb(h){ h=(h||'').replace('#',''); if(h.length===3) h=h.split('').map(c=>c+c).join(''); if(h.length<6) return null; const n=parseInt(h,16); return [(n>>16)&255,(n>>8)&255,n&255]; }
+function lum(h){ const c=hex2rgb(h); return c?(0.2126*c[0]+0.7152*c[1]+0.0722*c[2])/255:0; }
+function lighten(h,amt){ const c=hex2rgb(h); if(!c) return h; const f=x=>Math.round(x+(255-x)*amt); return `rgb(${f(c[0])},${f(c[1])},${f(c[2])})`; }
+function rgbaOf(c,a){ let r,g,b; if(c[0]==='#'){ const v=hex2rgb(c); if(!v) return 'rgba(255,107,53,'+a+')'; [r,g,b]=v; } else { const m=c.match(/\d+/g)||[255,107,53]; [r,g,b]=m.map(Number); } return `rgba(${r},${g},${b},${a})`; }
+function pickAccent(t){
+  let c=hex2rgb(t.color)?t.color:null, a=hex2rgb(t.alt)?t.alt:null, best=c||a;
+  if(c&&a) best=lum(a)>lum(c)?a:c;
+  if(!best) return null;
+  if(lum(best)<0.40) best=lighten(best,0.5);
+  return best;
+}
+function themeForGame(g){
+  const ca=pickAccent(g.away), ch=pickAccent(g.home);
+  let acc=ch||ca;
+  if(ca&&ch) acc=(g.away.score>g.home.score)?ca:ch;
+  if(acc){ html.style.setProperty('--accent',acc); html.style.setProperty('--accent-soft',rgbaOf(acc,'.16')); }
+}
+function clearTheme(){ html.style.removeProperty('--accent'); html.style.removeProperty('--accent-soft'); }
+function boardHTML(g){
+  const bar=t=>`<div class="teambar" style="background:${(hex2rgb(t.color)?t.color:'var(--accent)')}"></div>`;
+  return `<div class="side">${bigLogo(g.away)}<div><div class="nm">${g.away.name}</div><div class="rec">${g.away.rec||''}</div>${bar(g.away)}</div><span class="led">${g.away.score}</span></div>
+  <div class="mid"><div class="q">${g.live?g.statusText:(g.final?'Final':g.statusText)}</div></div>
+  <div class="side right">${bigLogo(g.home)}<div><div class="nm">${g.home.name}</div><div class="rec">${g.home.rec||''}</div>${bar(g.home)}</div><span class="led">${g.home.score}</span></div>`;
+}
+function gameCard(g,sport){
+  const sel=g.id===ST[sport].sel?'sel':'';
+  const aLose=g.final&&g.away.score<g.home.score, hLose=g.final&&g.home.score<g.away.score;
+  const state=g.live?`<span class="live-dot"></span>${g.statusText}`:(g.final?'Final':g.statusText);
+  return `<div class="game ${sel}" data-g="${g.id}" data-sport="${sport}" tabindex="0" role="button">
+    <div class="state ${g.live?'islive':''}">${state}</div>
+    <div class="team-row ${aLose?'lose':''}"><span class="tn">${teamLogo(g.away,'tlogo')} ${g.away.ab}</span><span class="sc">${g.away.score}</span></div>
+    <div class="team-row ${hLose?'lose':''}"><span class="tn">${teamLogo(g.home,'tlogo')} ${g.home.ab}</span><span class="sc">${g.home.score}</span></div></div>`;
+}
+function wireCards(sport,onPick){
+  document.querySelectorAll(`#${sport}-strip .game`).forEach(el=>{
+    const pick=()=>{ ST[sport].sel=el.dataset.g; onPick(); };
+    el.onclick=pick; el.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();pick();}};
+  });
+}
+function ordinal(n){ if(!n)return ''; const s=['th','st','nd','rd'],v=n%100; return n+(s[(v-20)%10]||s[v]||s[0]); }
+
+/* ============================================================ NFL */
+function nflWeekUrl(){ const w=NFL_WEEKS[ST.nfl.weekIdx]; return `${CFG.espn}/football/nfl/scoreboard?dates=${ST.nfl.year}&seasontype=${w.st}&week=${w.wk}`; }
+function renderNflNav(){
+  const w=NFL_WEEKS[ST.nfl.weekIdx];
+  $('#nfl-weeklabel').childNodes[0].nodeValue=w.label;
+  $('#nfl-seasonlabel').textContent=ST.nfl.year+' Season';
+  const sel=$('#nfl-weeksel');
+  if(sel.options.length!==NFL_WEEKS.length){ sel.innerHTML=NFL_WEEKS.map((x,i)=>`<option value="${i}">${x.label}</option>`).join(''); }
+  sel.value=ST.nfl.weekIdx; $('#nfl-yearsel').value=ST.nfl.year;
+}
+async function loadNfl(){
+  renderNflNav();
+  const j=await getJSON(nflWeekUrl());
+  if(j){ ST.nfl.games=parseEspn(j); ST.nfl.src='on'; } else { ST.nfl.games=[]; ST.nfl.src='off'; }
+  ST.nfl.sel=null;
+  if(ST.nfl.games.length) ST.nfl.sel=(ST.nfl.games.find(g=>g.live)||ST.nfl.games[0]).id;
+  updateGlobal();
+  renderNflStrip(); renderNflBoard();
+  loadFantasy();
+  if(ST.nfl.standYear!==ST.nfl.year){ loadStandings(); }
+}
+function renderNflStrip(){
+  const g=ST.nfl.games;
+  if(!g.length){ $('#nfl-strip').innerHTML='<div class="empty"><b>No games for this week.</b><br>Pick another week or season above. Live NFL resumes in the 2026 preseason.</div>'; $('#nfl-grid').classList.add('hidden'); return; }
+  $('#nfl-grid').classList.remove('hidden');
+  $('#nfl-strip').innerHTML=g.map(x=>gameCard(x,'nfl')).join('');
+  wireCards('nfl',()=>{ renderNflStrip(); renderNflBoard(); });
+}
+function renderNflBoard(){
+  const g=ST.nfl.games.find(x=>x.id===ST.nfl.sel); if(!g) return;
+  setSrc($('#nfl-src'),ST.nfl.src,ST.nfl.src==='on'?'Live':'Off');
+  themeForGame(g);
+  $('#nfl-board').innerHTML=boardHTML(g);
+  loadNflSummary(g);
+}
+async function loadNflSummary(g){
+  const sum=await getJSON(`${CFG.espn}/football/nfl/summary?event=${g.id}`);
+  renderDrive(g,sum); renderNflFeed(g,sum); renderBox(g,sum); renderGameLeaders(g,sum);
+}
+function renderDrive(g,sum){
+  const s=g.situation;
+  const ball=$('#nfl-ball'), first=$('#nfl-firstline');
+  if(g.live && s){
+    const possId=s.possession;
+    const possAb = g.home.id===possId?g.home.ab : g.away.id===possId?g.away.ab : '';
+    $('#nfl-drivetext').innerHTML = `<b>${possAb||'—'}</b> ball${s.isRedZone?' · <span style="color:var(--live)">RED ZONE</span>':''}`;
+    $('#nfl-dd').textContent = s.downDistanceText||'';
+    let yl = s.yardLine;
+    if(typeof yl==='number'){ const left=9+(yl/100)*82; ball.style.left=left+'%'; ball.style.display='block'; } else { ball.style.display='none'; }
+    first.style.display='none';
+    $('#nfl-drivenote').textContent = (s.lastPlay&&s.lastPlay.text)||'';
+  } else {
+    ball.style.display='none'; first.style.display='none';
+    let drv=null;
+    if(sum&&sum.drives){ if(sum.drives.previous&&sum.drives.previous.length) drv=sum.drives.previous[sum.drives.previous.length-1]; if(sum.drives.current) drv=sum.drives.current; }
+    if(drv){
+      const tm=(drv.team&&(drv.team.abbreviation||drv.team.shortDisplayName))||'';
+      $('#nfl-drivetext').innerHTML=`<b>${tm}</b> · final possession`;
+      $('#nfl-dd').textContent=drv.displayResult||drv.result||'';
+      $('#nfl-drivenote').textContent=drv.description||'';
+    } else {
+      $('#nfl-drivetext').innerHTML = g.final?'<b>Final</b>':'<b>Scheduled</b>';
+      $('#nfl-dd').textContent=''; $('#nfl-drivenote').textContent = g.final?'Game complete — drive tracker runs live during games.':'Kickoff pending.';
+    }
+  }
+}
+function renderNflFeed(g,sum){
+  let plays=[];
+  if(sum&&sum.scoringPlays){
+    const ab={}; ab[g.home.id]=g.home.ab; ab[g.away.id]=g.away.ab;
+    plays=sum.scoringPlays.map(p=>{ const txt=(p.type&&p.type.text||'').toLowerCase();
+      return {t:`${ordinal(p.period&&p.period.number)} ${p.clock&&p.clock.displayValue||''}`.trim(),
+        type:txt.includes('touchdown')?'td':txt.includes('field goal')?'fg':'sc',
+        tm:(p.team&&ab[p.team.id])||'',desc:p.text||(p.type&&p.type.text)||''};}).reverse();
+  }
+  $('#nfl-feed').innerHTML = plays.length? plays.map(x=>`<div class="play"><span class="t">${x.t}</span>
+    <span class="badge ${x.type}">${x.type==='td'?'TD':x.type==='fg'?'FG':'SCORE'}</span>
+    <span class="desc">${x.tm?`<span class="tm">${x.tm}</span> — `:''}${x.desc}</span></div>`).join('')
+    : '<div class="empty" style="border:0;padding:16px;">No scoring plays.</div>';
+}
+const BOX_LABELS=['1st Downs','Total Yards','Passing','Rushing','Turnovers','Penalties','Possession','3rd Down Efficiency','Sacks-Yards Lost'];
+function renderBox(g,sum){
+  setSrc($('#nfl-box-src'),ST.nfl.src,ST.nfl.src==='on'?'Live':'Final');
+  const teams=sum&&sum.boxscore&&sum.boxscore.teams;
+  if(!teams||teams.length<2){ $('#nfl-stats').innerHTML='<div class="empty" style="border:0;padding:16px;">Team stats appear once the game starts.</div>'; return; }
+  const find=ha=>teams.find(t=>t.homeAway===ha)||teams[ha==='away'?0:1];
+  const A=find('away'), H=find('home');
+  const stat=(team,labels)=>{ const arr=team.statistics||[]; for(const L of labels){ const m=arr.find(s=>(s.label||'').toLowerCase()===L.toLowerCase()); if(m) return m.displayValue; } return '—'; };
+  const rows=[
+    ['1st Downs',['1st Downs','First Downs']],['Total Yards',['Total Yards']],['Passing',['Passing','Net Passing Yards','Passing Yards']],
+    ['Rushing',['Rushing','Rushing Yards']],['3rd Down',['3rd down efficiency','Third Down Efficiency','3rd Down Efficiency']],
+    ['Turnovers',['Turnovers']],['Penalties',['Penalties','Penalties-Yards','Total Penalties-Yards']],['Possession',['Possession','Time of Possession']],
+  ];
+  $('#nfl-stats').innerHTML=rows.map(([lab,keys])=>{
+    const a=stat(A,keys),h=stat(H,keys);
+    const num=v=>{const n=parseFloat(String(v).replace(/[^0-9.\-]/g,''));return isNaN(n)?null:n;};
+    let aw='',hw=''; const na=num(a),nh=num(h); const lower=lab==='Turnovers'||lab==='Penalties';
+    if(na!=null&&nh!=null&&na!==nh){ const aBetter=lower?na<nh:na>nh; aw=aBetter?'win':''; hw=aBetter?'':'win'; }
+    return `<div class="statrow"><span class="v a ${aw}">${a}</span><span class="lab">${lab}</span><span class="v h ${hw}">${h}</span></div>`;
+  }).join('');
+  $('#nfl-stats').insertAdjacentHTML('afterbegin',`<div class="statrow"><span class="v a" style="color:var(--accent)">${g.away.ab}</span><span class="lab"></span><span class="v h" style="color:var(--accent)">${g.home.ab}</span></div>`);
+}
+function renderGameLeaders(g,sum){
+  const L=sum&&sum.leaders; let out='';
+  if(L&&L.length){
+    const cats=['passingYards','rushingYards','receivingYards'];
+    const labelMap={passingYards:'Pass',rushingYards:'Rush',receivingYards:'Rec'};
+    cats.forEach(cat=>{
+      for(const teamL of L){
+        const c=(teamL.leaders||[]).find(x=>x.name===cat);
+        if(c&&c.leaders&&c.leaders[0]){ const ld=c.leaders[0];
+          out+=`<div class="gl"><span class="cat">${labelMap[cat]}</span><span class="nm">${ld.athlete&&ld.athlete.shortName||''}</span><span class="val">${ld.displayValue||''}</span></div>`;
+          break;
+        }
+      }
+    });
+  }
+  $('#nfl-leaders').innerHTML=out||'<div class="empty" style="border:0;padding:14px;">Leaders show during/after games.</div>';
+}
+
+/* NFL standings */
+async function loadStandings(){
+  ST.nfl.standYear=ST.nfl.year;
+  const j=await getJSON(`${CFG.espnWeb}/v2/sports/football/nfl/standings?season=${ST.nfl.year}&level=3`);
+  const el=$('#nfl-standings');
+  if(!j||!j.children){ el.innerHTML='<div class="empty">Standings unavailable for this season.</div>'; return; }
+  el.innerHTML=j.children.map(conf=>{
+    const divs=(conf.children||[]).map(div=>{
+      const entries=(div.standings&&div.standings.entries)||[];
+      const rows=entries.map(en=>{
+        const t=en.team||{}; const gv=k=>{const s=(en.stats||[]).find(x=>x.name===k||x.type===k);return s?s.displayValue:'';};
+        const w=gv('wins'),l=gv('losses'),ti=gv('ties'),pct=gv('winPercent');
+        const logo=(t.logos&&t.logos[0]&&t.logos[0].href)||'';
+        return `<div class="strow"><span class="tn">${logo?`<img class="tlogo" src="${logo}" alt="">`:''}${t.abbreviation||t.shortDisplayName||''}</span><span class="rec">${w}-${l}${ti&&ti!=='0'?'-'+ti:''}</span><span class="pct">${pct||''}</span></div>`;
+      }).join('');
+      return `<div class="divtable"><div class="dn">${div.name||''}</div>${rows||'<div class="strow"><span class="tn">—</span></div>'}</div>`;
+    }).join('');
+    return `<div class="conf"><h4>${conf.name||''}</h4>${divs}</div>`;
+  }).join('');
+}
+
+/* ============================================================ MLB */
+function renderMlbNav(){
+  const d=ST.mlb.date, today=new Date(); today.setHours(0,0,0,0); const dd=new Date(d); dd.setHours(0,0,0,0);
+  const isToday=dd.getTime()===today.getTime();
+  $('#mlb-datelabel').childNodes[0].nodeValue = d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+  $('#mlb-datelabel').querySelector('small').textContent = isToday?'Today':(dd<today?'Final':'Upcoming');
+  $('#mlb-datepick').value=ymdDash(d);
+}
+async function loadMlb(){
+  renderMlbNav();
+  ST.mlb.sched=null;
+  const j=await getJSON(`${CFG.espn}/baseball/mlb/scoreboard?dates=${ymd(ST.mlb.date)}`);
+  if(j){ ST.mlb.games=parseEspn(j); ST.mlb.src='on'; } else { ST.mlb.games=[]; ST.mlb.src='off'; }
+  ST.mlb.sel=null;
+  if(ST.mlb.games.length) ST.mlb.sel=(ST.mlb.games.find(g=>g.live)||ST.mlb.games[0]).id;
+  updateGlobal();
+  renderMlbStrip(); renderMlbBoard();
+}
+function renderMlbStrip(){
+  const g=ST.mlb.games;
+  if(!g.length){ $('#mlb-strip').innerHTML='<div class="empty"><b>No MLB games on this date.</b><br>Use the date nav to find a game day.</div>'; $('#mlb-grid').classList.add('hidden'); return; }
+  $('#mlb-grid').classList.remove('hidden');
+  $('#mlb-strip').innerHTML=g.map(x=>gameCard(x,'mlb')).join('');
+  wireCards('mlb',()=>{ renderMlbStrip(); renderMlbBoard(); });
+}
+function renderMlbBoard(){
+  const g=ST.mlb.games.find(x=>x.id===ST.mlb.sel); if(!g) return;
+  setSrc($('#mlb-src'),ST.mlb.src,ST.mlb.src==='on'?'Live':'Off');
+  themeForGame(g);
+  $('#mlb-board').innerHTML=boardHTML(g);
+  renderCountBases(g); loadMlbDetail(g);
+}
+function renderCountBases(g){
+  const s=g.situation||{};
+  const nameOf=o=>o?(o.athlete?o.athlete.shortName:o):'—';
+  $('#mlb-matchup').innerHTML = g.live?`Now batting<b>${nameOf(s.batter)}</b><span style="color:var(--muted)">facing ${nameOf(s.pitcher)}</span>`:`<b>${g.final?'Final':g.statusText}</b>`;
+  const lights=(n,max)=>Array.from({length:max},(_,i)=>`<i class="${i<(n||0)?'on':''}"></i>`).join('');
+  $('#c-balls').innerHTML=lights(s.balls,3); $('#c-strikes').innerHTML=lights(s.strikes,2); $('#c-outs').innerHTML=lights(s.outs,3);
+  $('#bs1').classList.toggle('on',!!s.onFirst); $('#bs2').classList.toggle('on',!!s.onSecond); $('#bs3').classList.toggle('on',!!s.onThird);
+}
+async function loadMlbDetail(g){
+  if(!g.live){ ST.mlb.pitches=[]; setSrc($('#pitch-src'),'off','Idle'); renderZone(); renderPitchList(); return; }
+  if(!ST.mlb.sched) ST.mlb.sched=await getJSON(`${CFG.mlb1}/schedule?sportId=1&date=${ymdDash(ST.mlb.date)}`);
+  let gamePk=null;
+  if(ST.mlb.sched&&ST.mlb.sched.dates&&ST.mlb.sched.dates[0]){
+    const want=[nick(g.home.name),nick(g.away.name)];
+    const m=ST.mlb.sched.dates[0].games.find(gm=>{const h=nick(gm.teams.home.team.name),a=nick(gm.teams.away.team.name);return want.includes(h)&&want.includes(a);});
+    if(m) gamePk=m.gamePk;
+  }
+  if(!gamePk){ pitchFallback(); return; }
+  const feed=await getJSON(`${CFG.mlb11}/game/${gamePk}/feed/live`);
+  if(!feed||!feed.liveData){ pitchFallback(); return; }
+  const cur=feed.liveData.plays.currentPlay, evs=(cur&&cur.playEvents)||[];
+  ST.mlb.pitches=evs.filter(e=>e.isPitch&&e.pitchData&&e.pitchData.coordinates).map((e,i)=>{
+    const code=e.details&&e.details.code, desc=(e.details&&e.details.description||'').toLowerCase();
+    let res='ball'; if(code==='B')res='ball'; else if(code==='X'||desc.includes('in play'))res='hit'; else if(desc.includes('foul'))res='foul'; else res='strike';
+    return {n:e.pitchNumber||i+1,type:(e.details&&e.details.type&&e.details.type.description)||'Pitch',velo:e.pitchData.startSpeed||0,res,
+      x:e.pitchData.coordinates.pX,z:e.pitchData.coordinates.pZ,szTop:e.pitchData.strikeZoneTop,szBot:e.pitchData.strikeZoneBottom};
+  });
+  setSrc($('#pitch-src'),'on','Live · MLB');
+  if(cur&&cur.count){ const s=g.situation=g.situation||{}; s.balls=cur.count.balls; s.strikes=cur.count.strikes; s.outs=cur.count.outs;
+    if(cur.matchup){ s.batter=cur.matchup.batter&&cur.matchup.batter.fullName; s.pitcher=cur.matchup.pitcher&&cur.matchup.pitcher.fullName; } renderCountBases(g); }
+  renderZone(); renderPitchList();
+}
+function pitchFallback(){ ST.mlb.pitches=[]; setSrc($('#pitch-src'),'demo','Count only'); renderZone(); renderPitchList(true); }
+function renderZone(){
+  const cx0=150,scaleX=70,baseY=250,scaleZ=55; const last=ST.mlb.pitches[ST.mlb.pitches.length-1];
+  const szTop=(last&&last.szTop)||3.5, szBot=(last&&last.szBot)||1.5;
+  const zL=cx0-0.83*scaleX,zR=cx0+0.83*scaleX,zT=baseY-szTop*scaleZ,zB=baseY-szBot*scaleZ;
+  let s=`<rect x="${zL-30}" y="${zT-30}" width="${(zR-zL)+60}" height="${(zB-zT)+60}" rx="8" fill="#070B14" stroke="#283449"/>`;
+  s+=`<rect x="${zL}" y="${zT}" width="${zR-zL}" height="${zB-zT}" fill="none" stroke="#3a4a63" stroke-width="2"/>`;
+  for(let i=1;i<3;i++){ s+=`<line x1="${zL+(zR-zL)/3*i}" y1="${zT}" x2="${zL+(zR-zL)/3*i}" y2="${zB}" stroke="#1f2a3a"/>`; s+=`<line x1="${zL}" y1="${zT+(zB-zT)/3*i}" x2="${zR}" y2="${zT+(zB-zT)/3*i}" stroke="#1f2a3a"/>`; }
+  s+=`<polygon points="${cx0-22},300 ${cx0+22},300 ${cx0+22},312 ${cx0},320 ${cx0-22},312" fill="#1A2435" stroke="#283449"/>`;
+  ST.mlb.pitches.forEach((p,i)=>{ const x=cx0+(p.x||0)*scaleX,y=baseY-(p.z||0)*scaleZ,lo=i===ST.mlb.pitches.length-1,c=pitchColor(p.type);
+    s+=`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${lo?11:8}" fill="${c}" fill-opacity="${lo?1:.5}" stroke="${lo?'#fff':c}" stroke-width="${lo?2:0}"/>`;
+    s+=`<text x="${x.toFixed(1)}" y="${(y+3.5).toFixed(1)}" font-size="9" font-family="JetBrains Mono" font-weight="700" fill="#0A0F1A" text-anchor="middle">${p.n}</text>`; });
+  $('#zone').innerHTML=s;
+  if(last){ $('#lp-velo').innerHTML=`${Number(last.velo).toFixed(1)}<small> mph</small>`; $('#lp-type').textContent=last.type; }
+  else { $('#lp-velo').innerHTML='--<small> mph</small>'; $('#lp-type').textContent='Awaiting pitch'; }
+  $('#zone-legend').innerHTML=Object.entries({'Fastball':'#FF4D4D','Sinker':'#FF8A3C','Cutter':'#37D4C0','Slider':'#37A0FF','Curveball':'#A77BFF','Changeup':'#3DDC84'}).map(([k,v])=>`<span><i style="background:${v}"></i>${k}</span>`).join('');
+}
+function renderPitchList(fb){
+  if(fb){ $('#mlb-pitches').innerHTML='<div class="empty" style="border:0;padding:16px;">Count &amp; bases are live from ESPN. Per-pitch velocity &amp; location need MLB\u2019s GameDay feed, which this browser request couldn\u2019t reach. Hosting the page fixes it.</div>'; return; }
+  const p=ST.mlb.pitches;
+  if(!p.length){ $('#mlb-pitches').innerHTML='<div class="empty" style="border:0;padding:16px;">Waiting for the next pitch…</div>'; return; }
+  $('#mlb-pitches').innerHTML=p.slice().reverse().map(x=>{ const cls=x.res==='ball'?'ball':x.res==='hit'?'hit':'strike';
+    return `<div class="pl"><span class="no">${x.n}</span><span class="ptype"><i style="background:${pitchColor(x.type)}"></i>${x.type}</span><span class="velo">${x.velo?Number(x.velo).toFixed(1):'--'}</span><span class="res ${cls}">${x.res}</span></div>`;}).join('');
+}
+
+/* ============================================================ SHARED UI */
+function updateGlobal(){
+  const anyLive=ST.nfl.games.some(g=>g.live)||ST.mlb.games.some(g=>g.live);
+  const bothOff=ST.nfl.src==='off'&&ST.mlb.src==='off';
+  if(bothOff){ setSrc($('#global-src'),'off','Offline'); $('#topnote-text').innerHTML='Could not reach the live feed. Check your connection.'; }
+  else { setSrc($('#global-src'),'on','Live · ESPN'); $('#topnote-text').innerHTML=anyLive?'Connected. <b>Live games in progress</b> — auto-refreshing.':'Connected to ESPN. Browse weeks &amp; dates with the nav above.'; }
+}
+/* ============================================================ FANTASY (real, computed from box scores) */
+function fantasyScore(r){
+  return (r.passYds||0)*0.04+(r.passTD||0)*4+(r.int||0)*-2
+    +(r.rushYds||0)*0.1+(r.rushTD||0)*6
+    +(r.rec||0)*1+(r.recYds||0)*0.1+(r.recTD||0)*6
+    +(r.fumLost||0)*-2;
+}
+function accFromSummary(sum,acc){
+  const players=sum&&sum.boxscore&&sum.boxscore.players; if(!players) return;
+  players.forEach(tb=>{
+    const teamAb=(tb.team&&tb.team.abbreviation)||'';
+    (tb.statistics||[]).forEach(grp=>{
+      const labels=grp.labels||[]; const gi=l=>labels.indexOf(l);
+      (grp.athletes||[]).forEach(a=>{
+        const ath=a.athlete||{}; const id=ath.id||ath.displayName; if(!id) return;
+        const st=a.stats||[];
+        const val=l=>{const i=gi(l); return i>=0?(parseFloat(String(st[i]).replace(/[^0-9.\-]/g,''))||0):0;};
+        const r=acc[id]||(acc[id]={id,name:ath.displayName||ath.shortName||'',team:teamAb,pos:(ath.position&&ath.position.abbreviation)||''});
+        if(grp.name==='passing'){ r.passYds=val('YDS'); r.passTD=val('TD'); r.int=val('INT'); }
+        else if(grp.name==='rushing'){ r.rushYds=val('YDS'); r.rushTD=val('TD'); }
+        else if(grp.name==='receiving'){ r.rec=val('REC'); r.recYds=val('YDS'); r.recTD=val('TD'); }
+        else if(grp.name==='fumbles'){ r.fumLost=val('LOST'); }
+      });
+    });
+  });
+}
+function inferPos(r){
+  if(r.pos) return r.pos;
+  if((r.passYds||0)>0||(r.passTD||0)>0) return 'QB';
+  if((r.rushYds||0)>=(r.recYds||0)&&(r.rushYds||0)>0) return 'RB';
+  return 'WR';
+}
+async function loadFantasy(){
+  const key=ST.nfl.year+'-'+ST.nfl.weekIdx;
+  $('#fan-weeklabel').textContent=NFL_WEEKS[ST.nfl.weekIdx].label+' · '+ST.nfl.year;
+  if(ST.nfl.fan.key===key && ST.nfl.fan.rows.length){ renderFantasy(); return; }
+  if(!ST.nfl.games.length){ ST.nfl.fan.key=key; ST.nfl.fan.rows=[]; setSrc($('#fan-src'),'off','No games'); $('#fan-list').innerHTML='<div class="empty" style="border:0;padding:18px;">No games this week.</div>'; return; }
+  setSrc($('#fan-src'),'demo','Loading…');
+  $('#fan-list').innerHTML='<div class="empty" style="border:0;padding:18px;">Crunching box scores from every game this week…</div>';
+  const ids=ST.nfl.games.map(g=>g.id);
+  const sums=await Promise.all(ids.map(id=>getJSON(`${CFG.espn}/football/nfl/summary?event=${id}`)));
+  const acc={}; sums.forEach(s=>{ if(s) accFromSummary(s,acc); });
+  const rows=Object.values(acc).map(r=>({...r,pos:inferPos(r),pts:fantasyScore(r)})).filter(r=>r.pts>0).sort((a,b)=>b.pts-a.pts);
+  ST.nfl.fan.key=key; ST.nfl.fan.rows=rows;
+  setSrc($('#fan-src'), rows.length?'on':'off', rows.length?'Live':'No data');
+  renderFantasy();
+}
+function renderFantasy(){
+  const f=ST.nfl.fan, pos=f.pos;
+  let rows=f.rows; if(pos!=='ALL') rows=rows.filter(r=>r.pos===pos);
+  rows=rows.slice(0,30);
+  if(!rows.length){ $('#fan-list').innerHTML='<div class="empty" style="border:0;padding:18px;">No players for this filter.</div>'; return; }
+  $('#fan-list').innerHTML=rows.map((r,i)=>{
+    const brk=[];
+    if(r.passYds||r.passTD) brk.push(`${r.passYds||0} pass yd, ${r.passTD||0} TD${r.int?', '+r.int+' INT':''}`);
+    if(r.rushYds||r.rushTD) brk.push(`${r.rushYds||0} rush yd, ${r.rushTD||0} TD`);
+    if(r.rec||r.recYds||r.recTD) brk.push(`${r.rec||0} rec, ${r.recYds||0} yd, ${r.recTD||0} TD`);
+    if(r.fumLost) brk.push(`${r.fumLost} fum lost`);
+    return `<div class="fr"><span class="rk">${i+1}</span>
+      <span class="who">${r.name}<small>${r.team}</small></span>
+      <span class="pos">${r.pos}</span>
+      <span class="pts">${r.pts.toFixed(1)}</span>
+      <span class="brk">${brk.join('  ·  ')||'—'}</span></div>`;
+  }).join('');
+  $('#fan-list').querySelectorAll('.fr').forEach(el=>el.onclick=()=>el.classList.toggle('open'));
+}
+document.querySelectorAll('#fan-filter .pf').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('#fan-filter .pf').forEach(x=>x.classList.remove('on')); b.classList.add('on');
+  ST.nfl.fan.pos=b.dataset.pos; renderFantasy();
+});
+
+/* nav events */
+$('#nfl-prev').onclick=()=>{ if(ST.nfl.weekIdx>0){ST.nfl.weekIdx--; loadNfl();} };
+$('#nfl-next').onclick=()=>{ if(ST.nfl.weekIdx<NFL_WEEKS.length-1){ST.nfl.weekIdx++; loadNfl();} };
+$('#nfl-weeksel').onchange=e=>{ ST.nfl.weekIdx=+e.target.value; loadNfl(); };
+$('#nfl-yearsel').onchange=e=>{ ST.nfl.year=+e.target.value; loadNfl(); };
+$('#mlb-prev').onclick=()=>{ ST.mlb.date.setDate(ST.mlb.date.getDate()-1); ST.mlb.date=new Date(ST.mlb.date); loadMlb(); };
+$('#mlb-next').onclick=()=>{ ST.mlb.date.setDate(ST.mlb.date.getDate()+1); ST.mlb.date=new Date(ST.mlb.date); loadMlb(); };
+$('#mlb-today').onclick=()=>{ ST.mlb.date=new Date(); loadMlb(); };
+$('#mlb-datepick').onchange=e=>{ if(e.target.value){ const [y,m,d]=e.target.value.split('-').map(Number); ST.mlb.date=new Date(y,m-1,d); loadMlb(); } };
+
+document.querySelectorAll('.sport-tab:not(.locked)').forEach(tab=>{ tab.onclick=()=>{ const sp=tab.dataset.sport; html.setAttribute('data-sport',sp);
+  document.querySelectorAll('.sport-tab').forEach(t=>t.setAttribute('aria-selected',t===tab?'true':'false'));
+  $('#view-nfl').classList.toggle('hidden',sp!=='nfl'); $('#view-mlb').classList.toggle('hidden',sp!=='mlb');
+  clearTheme();
+  const g=(sp==='nfl'?ST.nfl.games.find(x=>x.id===ST.nfl.sel):ST.mlb.games.find(x=>x.id===ST.mlb.sel));
+  if(g) themeForGame(g);
+}; });
+document.querySelectorAll('#nfl-subtabs .subtab').forEach(t=>{ t.onclick=()=>{
+  const sub=t.dataset.sub;
+  document.querySelectorAll('#nfl-subtabs .subtab').forEach(x=>x.classList.toggle('on',x===t));
+  $('#nfl-sub-games').classList.toggle('hidden',sub!=='games');
+  $('#nfl-sub-fantasy').classList.toggle('hidden',sub!=='fantasy');
+  $('#nfl-sub-standings').classList.toggle('hidden',sub!=='standings');
+  $('#nfl-navbar').classList.toggle('hidden',sub==='standings');
+}; });
+function tickClock(){ $('#clock').textContent=new Date().toLocaleTimeString('en-US',{hour12:false}); }
+
+/* init + polling */
+tickClock(); setInterval(tickClock,1000);
+loadNfl(); loadMlb();
+setInterval(()=>{
+  if(!$('#view-nfl').classList.contains('hidden') && ST.nfl.games.some(g=>g.live)) loadNfl();
+  if(!$('#view-mlb').classList.contains('hidden') && ST.mlb.games.some(g=>g.live)) loadMlb();
+}, CFG.refresh);
+setInterval(()=>{
+  if(!$('#view-mlb').classList.contains('hidden')){ const g=ST.mlb.games.find(x=>x.id===ST.mlb.sel); if(g&&g.live) loadMlbDetail(g); }
+  if(!$('#view-nfl').classList.contains('hidden')){ const g=ST.nfl.games.find(x=>x.id===ST.nfl.sel); if(g&&g.live) loadNflSummary(g); }
+}, CFG.refreshDetail);
+</script>
+</body>
+</html>
+
 <html lang="en" data-sport="nfl">
 <head>
 <meta charset="UTF-8" />
